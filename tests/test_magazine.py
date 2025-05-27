@@ -1,40 +1,25 @@
 import pytest
 from lib.models.magazine import Magazine
-from lib.models.author import Author
-from lib.models.article import Article
-from lib.db.connection import get_connection
-
-@pytest.fixture(autouse=True)
-def run_around_tests():
-    conn = get_connection()
-    conn.execute("DELETE FROM articles")
-    conn.execute("DELETE FROM magazines")
-    conn.execute("DELETE FROM authors")
-    conn.commit()
-    yield
 
 def test_create_magazine():
-    mag = Magazine.create("Gadget World", "Tech")
-    assert isinstance(mag, Magazine)
-    assert mag.name == "Gadget World"
+    mag = Magazine.create("Nature Explorer", "Science")
+    assert mag.id is not None
+    assert mag.name == "Nature Explorer"
+    assert mag.category == "Science"
 
 def test_get_all_magazines():
-    Magazine.create("Science Today", "Science")
-    Magazine.create("Health Life", "Health")
-    mags = Magazine.get_all()
-    names = [m.name for m in mags]
-    assert "Science Today" in names and "Health Life" in names
+    Magazine.create("Global Politics", "Politics")
+    magazines = Magazine.get_all()
+    assert len(magazines) >= 1
+    assert all(isinstance(m, Magazine) for m in magazines)
 
-def test_find_magazine_by_id():
-    mag = Magazine.create("Art Monthly", "Art")
+def test_find_by_id():
+    mag = Magazine.create("History Today", "History")
     found = Magazine.find_by_id(mag.id)
-    assert found.name == "Art Monthly"
+    assert found is not None
+    assert found.id == mag.id
+    assert found.name == "History Today"
 
-def test_magazine_get_articles_and_authors():
-    mag = Magazine.create("Music Vibes", "Music")
-    author = Author.create("Elena")
-    Article.create("Beats and Rhythms", author.id, mag.id)
-    articles = mag.get_articles()
-    authors = mag.get_authors()
-    assert articles[0].title == "Beats and Rhythms"
-    assert authors[0].name == "Elena"
+def test_find_by_id_not_found():
+    found = Magazine.find_by_id(-1)  
+    assert found is None

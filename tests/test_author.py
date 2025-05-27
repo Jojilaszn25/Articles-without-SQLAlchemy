@@ -1,38 +1,46 @@
-import pytest
 from lib.models.author import Author
 from lib.models.article import Article
+from lib.models.magazine import Magazine
 from lib.db.connection import get_connection
 
-@pytest.fixture(autouse=True)
-def run_around_tests():
-    
+def setup_function():
+    """Reset database before each test."""
     conn = get_connection()
-    conn.execute("DELETE FROM articles")
-    conn.execute("DELETE FROM authors")
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM articles")
+    cursor.execute("DELETE FROM authors")
+    cursor.execute("DELETE FROM magazines")
     conn.commit()
-    yield
 
 def test_create_author():
-    author = Author.create("Test Author")
+    author = Author.create("Nina Simone")
     assert isinstance(author, Author)
-    assert author.name == "Test Author"
+    assert author.name == "Nina Simone"
+    assert author.id is not None
 
 def test_get_all_authors():
-    Author.create("Alice")
-    Author.create("Bob")
+    Author.create("Toni Morrison")
+    Author.create("James Baldwin")
     authors = Author.get_all()
     names = [a.name for a in authors]
-    assert "Alice" in names and "Bob" in names
+    assert "Toni Morrison" in names
+    assert "James Baldwin" in names
+    assert len(authors) == 2
 
 def test_find_author_by_id():
-    author = Author.create("Charlie")
+    author = Author.create("Zora Neale Hurston")
     found = Author.find_by_id(author.id)
-    assert found.name == "Charlie"
+    assert found is not None
+    assert found.id == author.id
+    assert found.name == "Zora Neale Hurston"
 
 def test_author_get_articles():
-    author = Author.create("Dana")
-    Article.create("Article A", author.id, 1)  
-    Article.create("Article B", author.id, 1)
+    author = Author.create("Langston Hughes")
+    mag = Magazine.create("Poetry Digest", "Literature")
+    Article.create("Dream Deferred", author.id, mag.id)
+    Article.create("Harlem", author.id, mag.id)
     articles = author.get_articles()
     titles = [a.title for a in articles]
-    assert "Article A" in titles and "Article B" in titles
+    assert "Dream Deferred" in titles
+    assert "Harlem" in titles
+    assert len(articles) == 2
